@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { StatusMessage } from "@/components/ui/status-message";
 import { AnnouncementsApiError, createAnnouncement } from "@/lib/api/announcements";
 import {
   ANNOUNCEMENT_CONTENT_MAX_LENGTH,
@@ -26,11 +27,13 @@ export function AnnouncementForm({ onCreated }: AnnouncementFormProps) {
   const [content, setContent] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
+    setSuccessMessage(null);
     setFieldErrors({});
 
     const parsed = createAnnouncementSchema.safeParse({ title, content });
@@ -47,6 +50,8 @@ export function AnnouncementForm({ onCreated }: AnnouncementFormProps) {
       onCreated(announcement);
       setTitle("");
       setContent("");
+      setFieldErrors({});
+      setSuccessMessage("Announcement posted successfully.");
     } catch (error) {
       if (error instanceof AnnouncementsApiError) {
         if (error.status === 401) {
@@ -57,6 +62,11 @@ export function AnnouncementForm({ onCreated }: AnnouncementFormProps) {
 
         if (error.status === 400 && error.details) {
           setFieldErrors(error.details);
+          return;
+        }
+
+        if (error.status >= 500 || error.status === 0) {
+          setFormError("Something went wrong. Please try again.");
           return;
         }
 
@@ -72,6 +82,8 @@ export function AnnouncementForm({ onCreated }: AnnouncementFormProps) {
 
   const titleLength = title.length;
   const contentLength = content.length;
+  const fieldClassName =
+    "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-zinc-400 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-70 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
 
   return (
     <form
@@ -90,11 +102,12 @@ export function AnnouncementForm({ onCreated }: AnnouncementFormProps) {
           name="title"
           type="text"
           value={title}
+          disabled={isSubmitting}
           onChange={(event) => setTitle(event.target.value)}
           maxLength={ANNOUNCEMENT_TITLE_MAX_LENGTH}
           aria-invalid={Boolean(fieldErrors.title)}
           aria-describedby={fieldErrors.title ? "announcement-title-error" : "announcement-title-count"}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-zinc-400 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+          className={fieldClassName}
         />
         <div className="flex items-start justify-between gap-3">
           {fieldErrors.title ? (
@@ -119,13 +132,14 @@ export function AnnouncementForm({ onCreated }: AnnouncementFormProps) {
           name="content"
           rows={5}
           value={content}
+          disabled={isSubmitting}
           onChange={(event) => setContent(event.target.value)}
           maxLength={ANNOUNCEMENT_CONTENT_MAX_LENGTH}
           aria-invalid={Boolean(fieldErrors.content)}
           aria-describedby={
             fieldErrors.content ? "announcement-content-error" : "announcement-content-count"
           }
-          className="resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-zinc-400 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+          className={`resize-y ${fieldClassName}`}
         />
         <div className="flex items-start justify-between gap-3">
           {fieldErrors.content ? (
@@ -142,15 +156,22 @@ export function AnnouncementForm({ onCreated }: AnnouncementFormProps) {
       </div>
 
       {formError ? (
-        <p className="mt-4 text-sm text-red-600 dark:text-red-400" role="alert">
-          {formError}
-        </p>
+        <div className="mt-4">
+          <StatusMessage variant="error">{formError}</StatusMessage>
+        </div>
+      ) : null}
+
+      {successMessage ? (
+        <div className="mt-4">
+          <StatusMessage variant="success">{successMessage}</StatusMessage>
+        </div>
       ) : null}
 
       <div className="mt-6 flex justify-end">
         <button
           type="submit"
           disabled={isSubmitting}
+          aria-busy={isSubmitting}
           className="min-h-11 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
         >
           {isSubmitting ? "Posting…" : "Post announcement"}

@@ -12,11 +12,12 @@ export function AnnouncementSection() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let isActive = true;
 
-    async function loadAnnouncements() {
+    async function runLoad() {
       try {
         const data = await getAnnouncements();
 
@@ -37,12 +38,12 @@ export function AnnouncementSection() {
           return;
         }
 
+        setAnnouncements([]);
         setLoadError(
           error instanceof AnnouncementsApiError
             ? error.message
-            : "Failed to load announcements.",
+            : "Unable to load announcements. Please try again.",
         );
-        setAnnouncements([]);
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -50,12 +51,19 @@ export function AnnouncementSection() {
       }
     }
 
-    void loadAnnouncements();
+    void runLoad();
 
     return () => {
       isActive = false;
     };
-  }, [router]);
+  }, [router, reloadToken]);
+
+  function handleRetry() {
+    setIsLoading(true);
+    setLoadError(null);
+    setAnnouncements([]);
+    setReloadToken((current) => current + 1);
+  }
 
   function handleCreated(announcement: Announcement) {
     setAnnouncements((current) => [announcement, ...current]);
@@ -77,7 +85,13 @@ export function AnnouncementSection() {
 
       <div>
         <h3 className="mb-4 text-base font-semibold text-zinc-900 dark:text-zinc-50">Recent announcements</h3>
-        <AnnouncementList announcements={announcements} isLoading={isLoading} loadError={loadError} />
+        <AnnouncementList
+          announcements={announcements}
+          isLoading={isLoading}
+          loadError={loadError}
+          onRetry={handleRetry}
+          isRetrying={isLoading && reloadToken > 0}
+        />
       </div>
     </section>
   );

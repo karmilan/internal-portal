@@ -26,31 +26,49 @@ async function parseJson<T>(response: Response): Promise<T> {
   }
 }
 
+async function requestAnnouncements(input: RequestInit = {}) {
+  try {
+    return await fetch("/api/announcements", input);
+  } catch {
+    throw new AnnouncementsApiError(0, "Unable to load announcements. Please try again.");
+  }
+}
+
 export async function getAnnouncements(): Promise<Announcement[]> {
-  const response = await fetch("/api/announcements");
+  const response = await requestAnnouncements();
 
   if (response.status === 401) {
     throw new AnnouncementsApiError(401, "You are not authorized.");
+  }
+
+  if (response.status >= 500) {
+    throw new AnnouncementsApiError(500, "Unable to load announcements. Please try again.");
   }
 
   if (!response.ok) {
     const body = await parseJson<{ error?: string }>(response);
     throw new AnnouncementsApiError(
       response.status,
-      body.error ?? "Failed to load announcements.",
+      body.error ?? "Unable to load announcements. Please try again.",
     );
   }
 
   const data = await parseJson<AnnouncementsListResponse>(response);
-  return data.announcements;
+  return data.announcements ?? [];
 }
 
 export async function createAnnouncement(input: CreateAnnouncementInput): Promise<Announcement> {
-  const response = await fetch("/api/announcements", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch("/api/announcements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  } catch {
+    throw new AnnouncementsApiError(0, "Something went wrong. Please try again.");
+  }
 
   if (response.status === 401) {
     throw new AnnouncementsApiError(401, "You are not authorized.");
@@ -65,11 +83,15 @@ export async function createAnnouncement(input: CreateAnnouncementInput): Promis
     );
   }
 
+  if (response.status >= 500) {
+    throw new AnnouncementsApiError(500, "Something went wrong. Please try again.");
+  }
+
   if (!response.ok) {
     const body = await parseJson<{ error?: string }>(response);
     throw new AnnouncementsApiError(
       response.status,
-      body.error ?? "Failed to create announcement.",
+      body.error ?? "Something went wrong. Please try again.",
     );
   }
 

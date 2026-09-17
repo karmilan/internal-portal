@@ -35,6 +35,8 @@ Business logic lives in `src/services/announcement.service.ts`; Zod schemas in `
 
 The `/portal` page loads announcements via `GET /api/announcements` and creates them with `POST /api/announcements` (HttpOnly cookie sent automatically). UI components live under `src/components/announcements/`; fetch helpers in `src/lib/api/announcements.ts`. New posts are prepended from the create response without a full reload. Client validation reuses the same Zod limits as the API; `401` responses redirect to `/login`.
 
+Portal UI states (loading skeleton, empty list, fetch retry, inline success/error messages, disabled submit buttons) are handled in the announcement and auth client components. Network and server failures show generic copy only; internal errors are not surfaced to users.
+
 ## Setup
 
 1. Copy `.env.example` to `.env.local` and set `DATABASE_URL` and a strong `JWT_SECRET`.

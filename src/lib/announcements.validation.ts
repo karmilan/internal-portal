@@ -8,18 +8,12 @@ export const createAnnouncementSchema = z.object({
     .string({ message: "Title is required" })
     .trim()
     .min(1, "Title is required")
-    .max(
-      ANNOUNCEMENT_TITLE_MAX_LENGTH,
-      `Title must be at most ${ANNOUNCEMENT_TITLE_MAX_LENGTH} characters`,
-    ),
+    .max(ANNOUNCEMENT_TITLE_MAX_LENGTH, "Title must be 150 characters or less."),
   content: z
     .string({ message: "Content is required" })
     .trim()
     .min(1, "Content is required")
-    .max(
-      ANNOUNCEMENT_CONTENT_MAX_LENGTH,
-      `Content must be at most ${ANNOUNCEMENT_CONTENT_MAX_LENGTH} characters`,
-    ),
+    .max(ANNOUNCEMENT_CONTENT_MAX_LENGTH, "Content must be 5000 characters or less."),
 });
 
 export function validationDetailsFromZodError(error: z.ZodError): Record<string, string> {
