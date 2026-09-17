@@ -1,8 +1,8 @@
+import { AUTH_COOKIE_NAME, authCookieOptions, createAuthToken } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { authCookieOptions, AUTH_COOKIE_NAME, createAuthToken } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 const loginSchema = z.object({
   email: z.string().trim().email(),
