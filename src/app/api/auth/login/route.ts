@@ -21,7 +21,20 @@ export async function POST(request: Request) {
   const result = loginSchema.safeParse(body);
 
   if (!result.success) {
-    return NextResponse.json({ message: "Email and password are required" }, { status: 400 });
+    const details: Record<string, string> = {};
+
+    for (const issue of result.error.issues) {
+      const field = issue.path[0];
+
+      if (typeof field === "string" && !details[field]) {
+        details[field] = issue.message;
+      }
+    }
+
+    return NextResponse.json(
+      { message: "Check your email and password", details },
+      { status: 400 },
+    );
   }
 
   try {

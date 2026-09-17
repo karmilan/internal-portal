@@ -5,7 +5,7 @@ type PortalErrorProps = {
   reset: () => void;
 };
 
-export default function PortalError({ error: _error, reset }: PortalErrorProps) {
+export default function PortalError({ reset }: PortalErrorProps) {
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-start justify-center gap-4 px-4 py-16 sm:px-6">
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Something went wrong</h1>

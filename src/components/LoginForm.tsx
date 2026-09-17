@@ -9,11 +9,13 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setFieldErrors({});
     setIsSubmitting(true);
 
     try {
@@ -23,10 +25,13 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
 
-      let data: { message?: string } = {};
+      let data: { message?: string; details?: { email?: string; password?: string } } = {};
 
       try {
-        data = (await response.json()) as { message?: string };
+        data = (await response.json()) as {
+          message?: string;
+          details?: { email?: string; password?: string };
+        };
       } catch {
         if (!response.ok) {
           setError("Unable to sign in. Please try again.");
@@ -35,6 +40,12 @@ export function LoginForm() {
       }
 
       if (!response.ok) {
+        if (response.status === 400 && data.details) {
+          setFieldErrors(data.details);
+          setError(data.message ?? "Check your email and password.");
+          return;
+        }
+
         if (response.status === 401) {
           setError("Invalid email or password.");
           return;
@@ -76,10 +87,15 @@ export function LoginForm() {
           disabled={isSubmitting}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? "login-error" : undefined}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={fieldErrors.email ? "login-email-error" : "login-error"}
           className={fieldClassName}
         />
+        {fieldErrors.email ? (
+          <p id="login-email-error" className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {fieldErrors.email}
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="password" className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
@@ -94,10 +110,15 @@ export function LoginForm() {
           disabled={isSubmitting}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? "login-error" : undefined}
+          aria-invalid={Boolean(fieldErrors.password)}
+          aria-describedby={fieldErrors.password ? "login-password-error" : "login-error"}
           className={fieldClassName}
         />
+        {fieldErrors.password ? (
+          <p id="login-password-error" className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {fieldErrors.password}
+          </p>
+        ) : null}
       </div>
       {error ? (
         <div id="login-error">
