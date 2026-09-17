@@ -88,7 +88,7 @@ export function LoginForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           aria-invalid={Boolean(fieldErrors.email)}
-          aria-describedby={fieldErrors.email ? "login-email-error" : "login-error"}
+          aria-describedby={fieldErrors.email ? "login-email-error" : error ? "login-error" : undefined}
           className={fieldClassName}
         />
         {fieldErrors.email ? (
@@ -111,7 +111,9 @@ export function LoginForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           aria-invalid={Boolean(fieldErrors.password)}
-          aria-describedby={fieldErrors.password ? "login-password-error" : "login-error"}
+          aria-describedby={
+            fieldErrors.password ? "login-password-error" : error ? "login-error" : undefined
+          }
           className={fieldClassName}
         />
         {fieldErrors.password ? (
