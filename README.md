@@ -1,58 +1,96 @@
 # Internal Portal
 
-Small Next.js internal portal with server-side JWT authentication.
+A small authenticated internal portal. It provides secure login/logout, a protected portal, and an end-to-end announcements workflow backed by PostgreSQL.
 
-## Authentication
+## Overview
 
-Authentication uses `bcryptjs` to verify the database `passwordHash`, `jose` to create and verify HS256 JWTs, and Prisma for database access. Tokens contain only the user ID (`sub`) and email, expire after one hour, and are stored in the `internal_portal_token` HttpOnly cookie. The cookie uses `SameSite=Lax`, applies to `/`, and is marked `Secure` in production.
+Users authenticate with email and password, then can view and create announcements. Authentication is server-controlled with a short-lived JWT stored in an HttpOnly cookie. Announcements persist in the database and are returned newest-first.
 
-Available endpoints:
+## Features
 
-- `POST /api/auth/login` validates `{ email, password }` and returns safe user data.
-- `POST /api/auth/logout` clears the authentication cookie.
-- `GET /api/auth/me` returns the authenticated user or `401 Unauthorized`.
+- Secure login and logout
+- Protected `/portal` page
+- Protected announcement API
+- Create and view announcements
+- PostgreSQL persistence through Prisma
+- Server-side and client-side validation
+- Loading, empty, validation, error, success, and disabled-submit states
+- Responsive UI
 
-The reusable server-only helpers are in `src/lib/auth.ts`:
+## Tech Stack
 
-- `getCurrentUser()` — Server Components (reads the HttpOnly cookie, verifies JWT, loads the user from Prisma).
-- `getAuthenticatedUser(request)` — Route Handlers.
-- `requireAuth(request)` — Route Handlers; returns the user or a `401` JSON `{ "error": "Unauthorized" }` (never redirects).
+- **Frontend:** Next.js 16, TypeScript, Tailwind CSS
+- **Backend:** Next.js Route Handlers, Zod, `jose` JWTs, `bcryptjs` password verification
+- **Database:** PostgreSQL, Prisma ORM
+- **Tooling:** npm, ESLint, Prisma CLI
 
-`/portal` is protected in its Server Component: unauthenticated visitors are redirected to `/login` on the server. `/login` redirects authenticated users to `/portal`. Protected APIs (including `/api/announcements` and `/api/auth/me`) authenticate on every request and return `401` when the cookie is missing, invalid, expired, or refers to a deleted user. Browser pages redirect; APIs do not.
+## Getting Started
 
-JWT secrets and database credentials are provided through environment variables and are never returned to clients. `.env` and local environment files are ignored by git.
+Requirements: Node.js, npm, and a PostgreSQL database. Neon works as the hosted PostgreSQL provider.
 
-## Announcements API
+```bash
+npm install
+```
 
-Authenticated endpoints (same cookie/JWT as other protected APIs):
+Create `.env.local` as described below, then initialize and seed the database:
 
-- `GET /api/announcements` — lists announcements newest-first (`createdAt` descending). Returns `{ "announcements": [...] }`; each item includes safe `author` `{ id, name }` only.
-- `POST /api/announcements` — body `{ "title", "content" }` (trimmed server-side). Title 1–150 characters, content 1–5000 characters. Returns `201` with `{ "announcement": ... }`. `authorId` is always the authenticated user; client-supplied `authorId` is ignored.
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run db:seed
+npm run dev
+```
 
-Validation failures return `400` with `{ "error": "Validation failed", "details": { ... } }`. Unauthenticated requests return `401`. Unexpected errors return generic `500` messages without internal details. Pagination is intentionally omitted for this small assignment.
+Open `http://localhost:3000`. The root route redirects to `/login`.
 
-Business logic lives in `src/services/announcement.service.ts`; Zod schemas in `src/lib/announcements.validation.ts`.
+## Environment Variables
 
-The `/portal` page loads announcements via `GET /api/announcements` and creates them with `POST /api/announcements` (HttpOnly cookie sent automatically). UI components live under `src/components/announcements/`; fetch helpers in `src/lib/api/announcements.ts`. New posts are prepended from the create response without a full reload. Client validation reuses the same Zod limits as the API; `401` responses redirect to `/login`.
+Create `.env.local` with values for your environment:
 
-Portal UI states (loading skeleton, empty list, fetch retry, inline success/error messages, disabled submit buttons) are handled in the announcement and auth client components. Network and server failures show generic copy only; internal errors are not surfaced to users.
+```env
+DATABASE_URL="your-postgresql-connection-string"
+JWT_SECRET="your-long-random-secret"
+```
 
-## Setup
+- `DATABASE_URL` is used by Prisma and the PostgreSQL adapter.
+- `JWT_SECRET` signs and verifies authentication JWTs.
 
-1. Copy `.env.example` to `.env.local` and set `DATABASE_URL` and a strong `JWT_SECRET`.
-2. Install dependencies with `npm install`.
-3. Generate the Prisma client with `npm run prisma:generate`.
-4. Apply the schema to your database (for example `npm run prisma:migrate` or `npx prisma db push`).
-5. Seed demo data with `npm run db:seed`.
-6. Run the development server with `npm run dev`.
+`.env`, `.env.local`, and other local environment files must not be committed. [`.env.example`](.env.example) contains the required variable names without credentials.
 
-Run `npm run lint` and `npm run build` before deployment.
+## Database Setup
 
-## Demo account
+Prisma manages the PostgreSQL schema and migrations. The configured migration command is:
 
-For local and take-home testing only:
+```bash
+npm run prisma:migrate
+```
 
-- **Email:** `demo@example.com`
-- **Password:** `Demo@12345`
+The seed command creates the demo user and two sample announcements. It is idempotent for those sample records:
 
-`npm run db:seed` creates this user (bcrypt-hashed password) and two sample announcements authored by Demo User. The seed is idempotent: re-running it does not duplicate the user or the sample announcements. User-created announcements from the app are left unchanged.
+```bash
+npm run db:seed
+```
+
+The schema contains `User` and `Announcement` models. Each announcement belongs to its author, and list queries order announcements by `createdAt` descending.
+
+## Demo Credentials
+
+```text
+Email:    demo@example.com
+Password: Demo@12345
+```
+
+## Key Decisions
+
+- **Next.js for frontend and backend:** App Router pages and Route Handlers keep the small app in one deployable application.
+- **Announcements as the feature slice:** Login, protected APIs, validation, persistence, and create/view UI demonstrate a complete full-stack workflow without unfinished extra sections.
+- **PostgreSQL and Prisma:** Relational user/announcement data fits PostgreSQL, while Prisma provides typed queries and straightforward schema management.
+- **HttpOnly cookie authentication:** Client-side JavaScript cannot read the JWT, keeping session verification on the server.
+- **Local React state:** The UI has limited local interaction state, so Redux/Zustand would add complexity without solving a current problem.
+
+
+## Running Checks
+
+```bash
+npm run build
+```

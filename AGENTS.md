@@ -353,7 +353,7 @@ fetch for simple server communication
 
 If server-state complexity grows, TanStack Query may be introduced deliberately.
 
-Do not introduce Zustand, Redux, or another global state library just for this small assignment.
+Do not introduce Zustand, Redux, or another global state library just for this small app.
 
 Forms
 
@@ -414,7 +414,7 @@ fetch for simple server communication
 
 If server-state complexity grows, TanStack Query may be introduced deliberately.
 
-Do not introduce Zustand, Redux, or another global state library just for this small assignment.
+Do not introduce Zustand, Redux, or another global state library just for this small app.
 
 Forms
 
@@ -460,7 +460,7 @@ responsive behavior
 
 Do not spend excessive time on animations or visual effects.
 
-The assignment prioritizes engineering quality over visual complexity.
+The app prioritizes engineering quality over visual complexity.
 
 Accessibility
 
@@ -599,6 +599,6 @@ Verify the implementation after making changes.
 
 Explain important architectural decisions briefly when relevant.
 
-When requirements are ambiguous, prefer the simplest approach that fits the assignment and document the decision in the README.
+When requirements are ambiguous, prefer the simplest approach that fits the app and document the decision in the README.
 
 <!-- END:nextjs-agent-rules -->
